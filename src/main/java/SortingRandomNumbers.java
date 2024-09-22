@@ -1,7 +1,5 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.Random;
 
 public class SortingRandomNumbers extends JFrame {
@@ -9,17 +7,19 @@ public class SortingRandomNumbers extends JFrame {
     private JPanel numbersPanel;
     private int[] numbers;
     private boolean isAscending = true;
+    int count;
+    JPanel inputPanel;
 
     public SortingRandomNumbers() {
-//        setTitle("Intro screen");
-        setSize(300, 500);
+        setTitle("Intro screen");
+        setSize(300, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new FlowLayout());
 
-        JPanel inputPanel = new JPanel();
+        inputPanel = new JPanel();
         inputPanel.setLayout(new BoxLayout(inputPanel, BoxLayout.Y_AXIS));
-        inputPanel.add(Box.createVerticalStrut(150));
+        inputPanel.add(Box.createVerticalStrut(100));
 
         JLabel inputLabel = new JLabel("How many numbers to display?");
         inputLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -36,17 +36,12 @@ public class SortingRandomNumbers extends JFrame {
         enterButton.addActionListener(e -> {
             String inputText = numberInput.getText();
             try {
-                int count = Integer.parseInt(inputText);
-                if (count > 0 && count <= 50) {
-                    showNumbersScreen(count);
-                } else {
-                    JOptionPane.showMessageDialog(null, "Enter a valid number between 1 and 50.");
-                }
+                count = Integer.parseInt(inputText);
+                showNumbersScreen(count);
             } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(null, "Please enter a valid number.");
+                JOptionPane.showMessageDialog(null, "Please enter a number.");
             }
         });
-
         inputPanel.add(inputLabel);
         inputPanel.add(Box.createRigidArea(new Dimension(0, 10)));
         inputPanel.add(numberInput);
@@ -56,34 +51,14 @@ public class SortingRandomNumbers extends JFrame {
     }
 
     private void showNumbersScreen(int count) {
-        numbers = generateRandomNumbers(count);
-
-        getContentPane().removeAll();
-        getContentPane().setLayout(new BorderLayout());
-        int columns = (int) Math.ceil(count / 10.0);
-
-//        numbersPanel = new JPanel(new GridLayout(10, columns, 1, 1));
+        JFrame numbersFrame = new JFrame("Numbers Screen");
+        numbersFrame.setSize(count/10 * 70 + 200, 400);
+        numbersFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        numbersFrame.setLocationRelativeTo(null);
 
         numbersPanel = new JPanel();
-        numbersPanel.setLayout(new BoxLayout(numbersPanel, BoxLayout.Y_AXIS));
-
-        for (int num : numbers) {
-            JButton numberButton = new JButton(String.valueOf(num));
-            numberButton.setBackground(Color.BLUE);
-            numberButton.setForeground(Color.WHITE);
-            numberButton.setMaximumSize(new Dimension(60, 25));
-            numberButton.addActionListener(e -> {
-                int selectedNumber = Integer.parseInt(numberButton.getText());
-                if (selectedNumber <= 30) {
-                    numbers = generateRandomNumbers(count); // Нові числа
-                    refreshNumbersPanel();
-                } else {
-                    JOptionPane.showMessageDialog(null, "Please select a value smaller or equal to 30.");
-                }
-            });
-            numbersPanel.add(numberButton);
-            numbersPanel.add(Box.createRigidArea(new Dimension(0, 10)));
-        }
+        JScrollPane scrollPane = new JScrollPane(numbersPanel);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
         JButton sortButton = new JButton("Sort");
         sortButton.setForeground(Color.WHITE);
@@ -105,49 +80,94 @@ public class SortingRandomNumbers extends JFrame {
         resetButton.setForeground(Color.WHITE);
         resetButton.setMaximumSize(new Dimension(100, 20));
         resetButton.addActionListener(e -> {
-            getContentPane().removeAll();
-            add(new SortingRandomNumbers().getContentPane());
-            revalidate();
-            repaint();
+            numbersFrame.dispose();
+            setVisible(true);
+            numberInput.setText("");
         });
 
         JPanel controlPanel = new JPanel();
+        GroupLayout controlLayout = new GroupLayout(controlPanel);
+        controlPanel.setLayout(controlLayout);
+        controlLayout.setAutoCreateGaps(true);
+        controlLayout.setAutoCreateContainerGaps(true);
         controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
         controlPanel.add(sortButton);
         controlPanel.add(Box.createRigidArea(new Dimension(0, 10)));
         controlPanel.add(resetButton);
+        controlLayout.createSequentialGroup();
 
-        add(numbersPanel);
-        add(controlPanel, BorderLayout.EAST);
+        JPanel wrapperPanel = new JPanel(new BorderLayout());
+        wrapperPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        wrapperPanel.add(controlPanel, BorderLayout.CENTER);
 
-        revalidate();
-        repaint();
+        numbers = generateRandomNumbers(count);
+        numbersFrame.getContentPane().setLayout(new BorderLayout());
+        numbersFrame.getContentPane().add(scrollPane, BorderLayout.CENTER);
+        numbersFrame.getContentPane().add(wrapperPanel, BorderLayout.EAST);
+
+        refreshNumbersPanel();
+        numbersFrame.setVisible(true);
+        setVisible(false);
     }
 
     private void refreshNumbersPanel() {
+        int ROWS_PER_COLUMN = 10;
         numbersPanel.removeAll();
-        for (int num : numbers) {
-            JButton numberButton = new JButton(String.valueOf(num));
-            numberButton.setBackground(Color.BLUE);
-            numberButton.setForeground(Color.WHITE);
-            numberButton.setMaximumSize(new Dimension(60, 25));
-            numberButton.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    int selectedNumber = Integer.parseInt(numberButton.getText());
-                    if (selectedNumber <= 30) {
-                        numbers = generateRandomNumbers(numbers.length);
-                        refreshNumbersPanel();
-                    } else {
-                        JOptionPane.showMessageDialog(null, "Please select a value smaller or equal to 30.");
-                    }
+
+        GroupLayout groupLayout = new GroupLayout(numbersPanel);
+        numbersPanel.setLayout(groupLayout);
+
+        groupLayout.setAutoCreateGaps(true);
+        groupLayout.setAutoCreateContainerGaps(true);
+
+        GroupLayout.SequentialGroup horizontalGroup = groupLayout.createSequentialGroup();
+        GroupLayout.SequentialGroup verticalGroup = groupLayout.createSequentialGroup();
+
+        int columns = (int) Math.ceil((double) numbers.length / ROWS_PER_COLUMN);
+
+        JButton[][] buttons = new JButton[columns][ROWS_PER_COLUMN];
+
+        for (int col = 0; col < columns; col++) {
+            GroupLayout.ParallelGroup columnGroup = groupLayout.createParallelGroup(GroupLayout.Alignment.LEADING);
+            for (int row = 0; row < ROWS_PER_COLUMN; row++) {
+                int index = row + col * ROWS_PER_COLUMN;
+                if (index < numbers.length) {
+                    JButton numberButton = new JButton(String.valueOf(numbers[index]));
+                    numberButton.setBackground(Color.BLUE);
+                    numberButton.setForeground(Color.WHITE);
+                    numberButton.setMaximumSize(new Dimension(60, 25));
+                    numberButton.addActionListener(e -> {
+                        int selectedNumber = Integer.parseInt(numberButton.getText());
+                        if (selectedNumber <= 30) {
+                            numbers = generateRandomNumbers(count);
+                            refreshNumbersPanel();
+                        } else {
+                            JOptionPane.showMessageDialog(null, "Please select a value smaller or equal to 30.");
+                        }
+                    });
+                    buttons[col][row] = numberButton;
+                    columnGroup.addComponent(numberButton);
                 }
-            });
-            numbersPanel.add(numberButton);
-            numbersPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+            }
+            horizontalGroup.addGroup(columnGroup);
         }
-        revalidate();
-        repaint();
+
+        for (int row = 0; row < ROWS_PER_COLUMN; row++) {
+            GroupLayout.ParallelGroup rowGroup = groupLayout.createParallelGroup(GroupLayout.Alignment.BASELINE);
+
+            for (int col = 0; col < columns; col++) {
+                if (buttons[col][row] != null) {
+                    rowGroup.addComponent(buttons[col][row]);
+                }
+            }
+            verticalGroup.addGroup(rowGroup);
+        }
+
+        groupLayout.setHorizontalGroup(horizontalGroup);
+        groupLayout.setVerticalGroup(verticalGroup);
+
+        numbersPanel.revalidate();
+        numbersPanel.repaint();
     }
 
     private int[] generateRandomNumbers(int count) {
@@ -169,11 +189,11 @@ public class SortingRandomNumbers extends JFrame {
         return result;
     }
 
-    private void quickSort(int[] array, int left, int right) {
-        if (left < right) {
-            int supportingElement = partition(array, left, right);
-            quickSort(array, left, supportingElement - 1);
-            quickSort(array, supportingElement + 1, right);
+    private void quickSort(int[] array, int first, int last) {
+        if (first < last) {
+            int supportingElement = partition(array, first, last);
+            quickSort(array, first, supportingElement - 1);
+            quickSort(array, supportingElement + 1, last);
         }
     }
 
@@ -209,8 +229,6 @@ public class SortingRandomNumbers extends JFrame {
     }
 
     public static void main(String[] args) {
-                new SortingRandomNumbers().setVisible(true);
+        new SortingRandomNumbers().setVisible(true);
     }
 }
-
-
