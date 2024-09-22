@@ -52,8 +52,8 @@ public class SortingRandomNumbers extends JFrame {
 
     private void showNumbersScreen(int count) {
         JFrame numbersFrame = new JFrame("Numbers Screen");
-        numbersFrame.setSize(count/10 * 70 + 200, 400);
-        numbersFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        numbersFrame.setSize(count / 10 * 70 + 200, 400);
+        numbersFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         numbersFrame.setLocationRelativeTo(null);
 
         numbersPanel = new JPanel();
@@ -64,6 +64,7 @@ public class SortingRandomNumbers extends JFrame {
         sortButton.setForeground(Color.WHITE);
         sortButton.setBackground(Color.GREEN);
         sortButton.setMaximumSize(new Dimension(100, 20));
+        numbers = generateRandomNumbers(count);
         sortButton.addActionListener(e -> {
             quickSort(numbers, 0, numbers.length - 1);
             if (isAscending) {
@@ -86,21 +87,15 @@ public class SortingRandomNumbers extends JFrame {
         });
 
         JPanel controlPanel = new JPanel();
-        GroupLayout controlLayout = new GroupLayout(controlPanel);
-        controlPanel.setLayout(controlLayout);
-        controlLayout.setAutoCreateGaps(true);
-        controlLayout.setAutoCreateContainerGaps(true);
         controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
         controlPanel.add(sortButton);
         controlPanel.add(Box.createRigidArea(new Dimension(0, 10)));
         controlPanel.add(resetButton);
-        controlLayout.createSequentialGroup();
 
         JPanel wrapperPanel = new JPanel(new BorderLayout());
         wrapperPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         wrapperPanel.add(controlPanel, BorderLayout.CENTER);
 
-        numbers = generateRandomNumbers(count);
         numbersFrame.getContentPane().setLayout(new BorderLayout());
         numbersFrame.getContentPane().add(scrollPane, BorderLayout.CENTER);
         numbersFrame.getContentPane().add(wrapperPanel, BorderLayout.EAST);
@@ -113,20 +108,16 @@ public class SortingRandomNumbers extends JFrame {
     private void refreshNumbersPanel() {
         int ROWS_PER_COLUMN = 10;
         numbersPanel.removeAll();
+        int columns = (int) Math.ceil((double) numbers.length / ROWS_PER_COLUMN);
 
         GroupLayout groupLayout = new GroupLayout(numbersPanel);
         numbersPanel.setLayout(groupLayout);
-
         groupLayout.setAutoCreateGaps(true);
         groupLayout.setAutoCreateContainerGaps(true);
-
         GroupLayout.SequentialGroup horizontalGroup = groupLayout.createSequentialGroup();
         GroupLayout.SequentialGroup verticalGroup = groupLayout.createSequentialGroup();
 
-        int columns = (int) Math.ceil((double) numbers.length / ROWS_PER_COLUMN);
-
         JButton[][] buttons = new JButton[columns][ROWS_PER_COLUMN];
-
         for (int col = 0; col < columns; col++) {
             GroupLayout.ParallelGroup columnGroup = groupLayout.createParallelGroup(GroupLayout.Alignment.LEADING);
             for (int row = 0; row < ROWS_PER_COLUMN; row++) {
