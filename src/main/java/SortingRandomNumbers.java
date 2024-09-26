@@ -8,26 +8,30 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.GroupLayout;
+import javax.swing.SwingWorker;
 import java.awt.BorderLayout;
-import java.awt.FlowLayout;
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.util.Random;
+import java.util.List;
 import static javax.swing.JOptionPane.showMessageDialog;
 
 public class SortingRandomNumbers extends JFrame {
-    private final JTextField numberInput;
-    private JPanel numbersPanel;
-    private int[] numbers;
-    private boolean isAscending = true;
-    private int count;
     private static final int BORDER_NUMBER = 30;
     private static final int MAX_RANDOM_VALUE = 1000;
     private static final int MIN_RANDOM_VALUE = 1;
     private static final int ROWS_PER_COLUMN = 10;
     private static final Random RAND = new Random();
-
+    private final JTextField numberInput;
+    private int[] numbers;
+    private int count;
+    private boolean isAscending = true;
+    private boolean isFirstClick = true;
+    private JPanel numbersPanel;
+    private JButton numberButton;
+    private JButton[][] buttons;
 
     public SortingRandomNumbers() {
         setTitle("Intro screen");
@@ -87,13 +91,15 @@ public class SortingRandomNumbers extends JFrame {
 
         numbers = generateRandomNumbers(count);
         JButton sortButton = createButton("Sort", Color.WHITE, Color.GREEN, new Dimension(100, 20));
+
         sortButton.addActionListener(e -> {
-            quickSort(numbers, 0, numbers.length - 1);
-            if (isAscending) {
+            if (isFirstClick) {
+                highlightSorting(numbers, 0, numbers.length - 1);
                 isAscending = false;
+                isFirstClick = false;
             } else {
                 reverseArray(numbers);
-                isAscending = true;
+                isAscending = !isAscending;
             }
             refreshNumbersPanel();
         });
@@ -103,6 +109,7 @@ public class SortingRandomNumbers extends JFrame {
             numbersFrame.dispose();
             setVisible(true);
             numberInput.setText("");
+            isFirstClick = true;
         });
 
         JPanel controlPanel = new JPanel();
@@ -127,7 +134,7 @@ public class SortingRandomNumbers extends JFrame {
     private void refreshNumbersPanel() {
         numbersPanel.removeAll();
         int columns = (int) Math.ceil((double) numbers.length / ROWS_PER_COLUMN);
-        JButton[][] buttons = createButtonsNet(columns);
+        buttons = createButtonsNet(columns);
 
         GroupLayout groupLayout = new GroupLayout(numbersPanel);
         numbersPanel.setLayout(groupLayout);
@@ -158,12 +165,11 @@ public class SortingRandomNumbers extends JFrame {
                 }
             }
         }
-
         return buttons;
     }
 
     private JButton createNumberButton(int number) {
-        JButton numberButton = createButton(String.valueOf(number),
+        numberButton = createButton(String.valueOf(number),
                 Color.WHITE, Color.BLUE, new Dimension(60, 25));
         numberButton.addActionListener(e -> {
             int selectedNumber = Integer.parseInt(numberButton.getText());
@@ -174,7 +180,6 @@ public class SortingRandomNumbers extends JFrame {
                 showMessageDialog(null, "Please select a value smaller or equal to " + BORDER_NUMBER);
             }
         });
-
         return numberButton;
     }
 
@@ -204,7 +209,6 @@ public class SortingRandomNumbers extends JFrame {
         }
     }
 
-
     private int[] generateRandomNumbers(int count) {
         int[] result = new int[count];
         boolean isNumberLess30 = false;
@@ -219,35 +223,104 @@ public class SortingRandomNumbers extends JFrame {
         if (!isNumberLess30) {
             result[RAND.nextInt(count)] = RAND.nextInt(BORDER_NUMBER) + MIN_RANDOM_VALUE;
         }
-
         return result;
     }
 
-    private void quickSort(int[] array, int first, int last) {
-        if (first < last) {
-            int supportingElement = partition(array, first, last);
-            quickSort(array, first, supportingElement - 1);
-            quickSort(array, supportingElement + 1, last);
-        }
-    }
-
-    private int partition(int[] array, int first, int last) {
-        int supportingElement = array[last];
-        int i = (first - 1);
-        for (int j = first; j < last; j++) {
-            if (array[j] < supportingElement) {
-                i++;
-                int temp = array[i];
-                array[i] = array[j];
-                array[j] = temp;
+    private void highlightSorting(int[] array, int first, int last) {
+        SwingWorker<Void, int[]> sorter = new SwingWorker<>() {
+            @Override
+            protected Void doInBackground() {
+                quickSort(array, first, last);
+                return null;
             }
-        }
 
-        int temp = array[i + 1];
-        array[i + 1] = array[last];
-        array[last] = temp;
+            private void quickSort(int[] array, int first, int last) {
+                if (first < last) {
+                    int supportingElement = partition(array, first, last);
+                    quickSort(array, first, supportingElement - 1);
+                    quickSort(array, supportingElement + 1, last);
+                }
+            }
 
-        return i + 1;
+            private int partition(int[] array, int first, int last) {
+                int supportingElement = array[last];
+                highlightOneElement(last, Color.BLACK);
+                int i = first;
+
+                for (int j = first; j < last; j++) {
+                    highlightElements(i, j, Color.YELLOW);
+                    if (array[j] < supportingElement) {
+                        int temp = array[i];
+                        array[i] = array[j];
+                        array[j] = temp;
+                        publish(array.clone());
+                        highlightElements(i, j, Color.RED);
+                        i++;
+                    }
+                }
+
+                int temp = array[i];
+                array[i] = array[last];
+                array[last] = temp;
+
+                publish(array.clone());
+                highlightElements(i, last, Color.GREEN);
+
+                return i;
+            }
+
+            private void highlightElements(int index1, int index2, Color color) {
+                highlight(index1, color);
+                highlight(index2, color);
+            }
+
+            private void highlightOneElement(int index1, Color color) {
+                highlight(index1, color);
+            }
+
+            private void highlight(int index, Color color) {
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                }
+
+                buttons[index / ROWS_PER_COLUMN][index % ROWS_PER_COLUMN].setBackground(color);
+                numbersPanel.revalidate();
+                numbersPanel.repaint();
+            }
+
+
+            @Override
+            protected void process(List<int[]> pieces) {
+                int[] latestArray = pieces.get(pieces.size() - 1);
+
+                for (int col = 0; col < buttons.length; col++) {
+                    for (int row = 0; row < buttons[col].length; row++) {
+                        int index = row + col * ROWS_PER_COLUMN;
+                        if (index < latestArray.length) {
+                            buttons[col][row].setText(String.valueOf(latestArray[index]));
+                        }
+                    }
+                }
+                numbersPanel.revalidate();
+                numbersPanel.repaint();
+            }
+
+            @Override
+            protected void done() {
+                for (JButton[] button : buttons) {
+                    for (JButton jButton : button) {
+                        if (jButton != null) {
+                            jButton.setBackground(Color.BLUE);
+                        }
+                    }
+                }
+                numbersPanel.revalidate();
+                numbersPanel.repaint();
+            }
+        };
+        sorter.execute();
     }
 
     private void reverseArray(int[] array) {
@@ -267,6 +340,7 @@ public class SortingRandomNumbers extends JFrame {
         button.setBackground(background);
         button.setForeground(foreground);
         button.setMaximumSize(maxSize);
+
         return button;
     }
 
