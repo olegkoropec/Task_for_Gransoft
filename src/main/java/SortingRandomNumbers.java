@@ -30,7 +30,6 @@ public class SortingRandomNumbers extends JFrame {
     private boolean isAscending = true;
     private boolean isFirstClick = true;
     private JPanel numbersPanel;
-    private JButton numberButton;
     private JButton[][] buttons;
 
     public SortingRandomNumbers() {
@@ -169,7 +168,7 @@ public class SortingRandomNumbers extends JFrame {
     }
 
     private JButton createNumberButton(int number) {
-        numberButton = createButton(String.valueOf(number),
+        JButton numberButton = createButton(String.valueOf(number),
                 Color.WHITE, Color.BLUE, new Dimension(60, 25));
         numberButton.addActionListener(e -> {
             int selectedNumber = Integer.parseInt(numberButton.getText());
