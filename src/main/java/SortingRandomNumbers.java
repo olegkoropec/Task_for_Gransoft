@@ -17,6 +17,8 @@ import java.awt.FlowLayout;
 import java.util.Random;
 import java.util.List;
 import static javax.swing.JOptionPane.showMessageDialog;
+import static javax.swing.JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED;
+
 
 public class SortingRandomNumbers extends JFrame {
     private static final int BORDER_NUMBER = 30;
@@ -86,14 +88,14 @@ public class SortingRandomNumbers extends JFrame {
 
         numbersPanel = new JPanel();
         JScrollPane scrollPane = new JScrollPane(numbersPanel);
-        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
         numbers = generateRandomNumbers(count);
         JButton sortButton = createButton("Sort", Color.WHITE, Color.GREEN, new Dimension(100, 20));
 
         sortButton.addActionListener(e -> {
             if (isFirstClick) {
-                highlightSorting(numbers, 0, numbers.length - 1);
+                highlightSorting(numbers, numbers.length - 1);
                 isAscending = false;
                 isFirstClick = false;
             } else {
@@ -154,17 +156,17 @@ public class SortingRandomNumbers extends JFrame {
     }
 
     private JButton[][] createButtonsNet(int columns) {
-        JButton[][] buttons = new JButton[columns][ROWS_PER_COLUMN];
+        JButton[][] jButtons = new JButton[columns][ROWS_PER_COLUMN];
 
         for (int col = 0; col < columns; col++) {
             for (int row = 0; row < ROWS_PER_COLUMN; row++) {
                 int index = row + col * ROWS_PER_COLUMN;
                 if (index < numbers.length) {
-                    buttons[col][row] = createNumberButton(numbers[index]);
+                    jButtons[col][row] = createNumberButton(numbers[index]);
                 }
             }
         }
-        return buttons;
+        return jButtons;
     }
 
     private JButton createNumberButton(int number) {
@@ -225,101 +227,109 @@ public class SortingRandomNumbers extends JFrame {
         return result;
     }
 
-    private void highlightSorting(int[] array, int first, int last) {
+    private void quickSort(int[] array, int first, int last) {
+        if (first < last) {
+            int supportingElement = partition(array, first, last);
+            quickSort(array, first, supportingElement - 1);
+            quickSort(array, supportingElement + 1, last);
+        }
+    }
+
+    private int partition(int[] array, int first, int last) {
+        int supportingElement = array[last];
+        highlightOneElement(last);
+        int i = first;
+
+        for (int j = first; j < last; j++) {
+            highlightElements(i, j, Color.YELLOW);
+            if (array[j] < supportingElement) {
+                swap(array, i, j);
+                updateButtons(array.clone());
+                highlightElements(i, j, Color.RED);
+                i++;
+            }
+        }
+
+        swap(array, i, last);
+        updateButtons(array.clone());
+        highlightElements(i, last, Color.GREEN);
+
+        return i;
+    }
+
+    private void swap(int[] array, int index1, int index2) {
+        int temp = array[index1];
+        array[index1] = array[index2];
+        array[index2] = temp;
+    }
+
+    private void highlightElements(int index1, int index2, Color color) {
+        highlight(index1, color);
+        highlight(index2, color);
+    }
+
+    private void highlightOneElement(int index) {
+        highlight(index, Color.BLACK);
+    }
+
+    private void highlight(int index, Color color) {
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        }
+
+        buttons[index / ROWS_PER_COLUMN][index % ROWS_PER_COLUMN].setBackground(color);
+        numbersPanel.revalidate();
+        numbersPanel.repaint();
+    }
+
+    private void updateButtons(int[] latestArray) {
+        for (int col = 0; col < buttons.length; col++) {
+            for (int row = 0; row < buttons[col].length; row++) {
+                int index = row + col * ROWS_PER_COLUMN;
+                if (index < latestArray.length) {
+                    buttons[col][row].setText(String.valueOf(latestArray[index]));
+                }
+            }
+        }
+        numbersPanel.revalidate();
+        numbersPanel.repaint();
+    }
+
+    private void highlightSorting(int[] array, int last) {
         SwingWorker<Void, int[]> sorter = new SwingWorker<>() {
             @Override
             protected Void doInBackground() {
-                quickSort(array, first, last);
+                quickSort(array, 0, last);
                 return null;
             }
-
-            private void quickSort(int[] array, int first, int last) {
-                if (first < last) {
-                    int supportingElement = partition(array, first, last);
-                    quickSort(array, first, supportingElement - 1);
-                    quickSort(array, supportingElement + 1, last);
-                }
-            }
-
-            private int partition(int[] array, int first, int last) {
-                int supportingElement = array[last];
-                highlightOneElement(last, Color.BLACK);
-                int i = first;
-
-                for (int j = first; j < last; j++) {
-                    highlightElements(i, j, Color.YELLOW);
-                    if (array[j] < supportingElement) {
-                        int temp = array[i];
-                        array[i] = array[j];
-                        array[j] = temp;
-                        publish(array.clone());
-                        highlightElements(i, j, Color.RED);
-                        i++;
-                    }
-                }
-
-                int temp = array[i];
-                array[i] = array[last];
-                array[last] = temp;
-
-                publish(array.clone());
-                highlightElements(i, last, Color.GREEN);
-
-                return i;
-            }
-
-            private void highlightElements(int index1, int index2, Color color) {
-                highlight(index1, color);
-                highlight(index2, color);
-            }
-
-            private void highlightOneElement(int index1, Color color) {
-                highlight(index1, color);
-            }
-
-            private void highlight(int index, Color color) {
-                try {
-                    Thread.sleep(200);
-                } catch (InterruptedException ex) {
-                    Thread.currentThread().interrupt();
-                }
-
-                buttons[index / ROWS_PER_COLUMN][index % ROWS_PER_COLUMN].setBackground(color);
-                numbersPanel.revalidate();
-                numbersPanel.repaint();
-            }
-
 
             @Override
             protected void process(List<int[]> pieces) {
                 int[] latestArray = pieces.get(pieces.size() - 1);
-
-                for (int col = 0; col < buttons.length; col++) {
-                    for (int row = 0; row < buttons[col].length; row++) {
-                        int index = row + col * ROWS_PER_COLUMN;
-                        if (index < latestArray.length) {
-                            buttons[col][row].setText(String.valueOf(latestArray[index]));
-                        }
-                    }
-                }
-                numbersPanel.revalidate();
-                numbersPanel.repaint();
+                updateButtons(latestArray);
             }
 
             @Override
             protected void done() {
-                for (JButton[] button : buttons) {
-                    for (JButton jButton : button) {
-                        if (jButton != null) {
-                            jButton.setBackground(Color.BLUE);
-                        }
-                    }
-                }
-                numbersPanel.revalidate();
-                numbersPanel.repaint();
+                resetButtonColors();
             }
+
         };
         sorter.execute();
+    }
+
+    private void resetButtonColors() {
+        for (JButton[] buttonColumn : buttons) {
+            for (JButton button : buttonColumn) {
+                if (button != null) {
+                    button.setBackground(Color.BLUE);
+                }
+            }
+        }
+        numbersPanel.revalidate();
+        numbersPanel.repaint();
     }
 
     private void reverseArray(int[] array) {
